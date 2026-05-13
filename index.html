@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>OpenArmX A2 — Control Tablet</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ─── TOP HEADER ─────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <span class="logo-mark">⬡</span>
+      <div class="logo-text">
+        <span class="logo-title">OpenArmX A2</span>
+        <span class="logo-sub">Dual Arm · 14 Joints</span>
+      </div>
+    </div>
+    <div class="conn-status" id="connStatus">
+      <span class="conn-dot" id="connDot"></span>
+      <span id="connLabel">연결 중...</span>
+      <span class="conn-ip" id="connIp">192.168.0.10:8000</span>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="temp-quick" id="tempQuick">
+      <span class="tq-label">MAX TEMP</span>
+      <span class="tq-val" id="tqVal">—°C</span>
+    </div>
+  </div>
+</header>
+
+<!-- ─── MAIN LAYOUT ──────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar">
+    <button class="nav-btn active" data-screen="safety" onclick="App.nav('safety')">
+      <span class="nav-icon">✅</span>
+      <span>체크리스트</span>
+    </button>
+    <button class="nav-btn" data-screen="monitor" onclick="App.nav('monitor')">
+      <span class="nav-icon">⚙</span>
+      <span>초기 설정</span>
+    </button>
+    <button class="nav-btn" data-screen="files" onclick="App.nav('files')">
+      <span class="nav-icon">📁</span>
+      <span>파일</span>
+    </button>
+    <button class="nav-btn" data-screen="playlist" onclick="App.nav('playlist')">
+      <span class="nav-icon">🎬</span>
+      <span>플레이리스트</span>
+    </button>
+  </nav>
+
+  <!-- CONTENT AREA -->
+  <main class="content">
+
+    <!-- ── SCREEN: FILES ─────────────────────────────────────────── -->
+    <section class="screen" id="screen-files">
+      <div class="screen-header">
+        <h2 class="screen-title">파일 관리</h2>
+        <div class="screen-actions">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="fileSearch" type="text"
+                   placeholder="파일명 검색..." oninput="App.filterFiles()" />
+          </div>
+          <select class="sort-select" onchange="App.sortFiles(this.value)">
+            <option value="date">최신순</option>
+            <option value="name">이름순</option>
+            <option value="duration">길이순</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="files-layout">
+        <div class="file-list-panel">
+          <div class="panel-header">
+            <span>모션 세트 <span class="count-badge" id="fileCount">0</span></span>
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <div class="file-detail-panel" id="fileDetail">
+          <div class="detail-empty" id="detailEmpty">
+            <span class="detail-empty-icon">📂</span>
+            <p>파일을 선택하세요</p>
+          </div>
+          <div class="detail-content hidden" id="detailContent">
+            <div class="detail-hero">
+              <div class="detail-icon-wrap"><span class="detail-big-icon">🎭</span></div>
+              <div class="detail-info">
+                <div class="detail-name" id="detailName"></div>
+                <div class="detail-version" id="detailVersion"></div>
+              </div>
+              <div class="detail-actions">
+                <button class="btn btn-success btn-lg" id="detailPlayBtn" onclick="App.loadAndPlay()">▶ 바로 재생</button>
+                <button class="btn btn-outline" onclick="App.addToPlaylist()">+ 플레이리스트 추가</button>
+              </div>
+
+              <!-- 재생 중 인라인 플레이어 (바로 재생 시 표시) -->
+              <div class="detail-player hidden" id="detailPlayer">
+                <div class="dp-header">
+                  <span class="dp-live-dot" id="dpLiveDot"></span>
+                  <span class="dp-label" id="dpLabel">재생 중</span>
+                  <span class="dp-time" id="dpTime">0:00 / 0:00</span>
+                  <button class="dp-stop-btn" onclick="App.stop()">⏹ 정지</button>
+                </div>
+                <div class="dp-progress-wrap">
+                  <div class="dp-progress-fill" id="dpProgressFill" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-meta-grid">
+              <div class="meta-card"><span class="meta-label">재생 시간</span><span class="meta-val" id="metaDuration">—</span></div>
+              <div class="meta-card"><span class="meta-label">포즈 수</span><span class="meta-val" id="metaPoses">—</span></div>
+              <div class="meta-card"><span class="meta-label">YAML 파일</span><span class="meta-val meta-file" id="metaYaml">—</span></div>
+              <div class="meta-card"><span class="meta-label">음악 파일</span><span class="meta-val meta-file" id="metaMusic">—</span></div>
+              <div class="meta-card"><span class="meta-label">마지막 수정</span><span class="meta-val" id="metaDate">—</span></div>
+              <div class="meta-card"><span class="meta-label">파일 크기</span><span class="meta-val" id="metaSize">—</span></div>
+            </div>
+
+            <div class="detail-footer-actions">
+              <button class="btn btn-danger btn-sm" onclick="App.deleteFile()">🗑 삭제</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREEN: PLAY ──────────────────────────────────────────── -->
+    <section class="screen" id="screen-play">
+      <div class="screen-header">
+        <div class="screen-title-wrap">
+          <span class="mode-badge mode-preview">PREVIEW</span>
+          <h2 class="screen-title">프리뷰</h2>
+          <span class="screen-subtitle">1회 재생 · 세밀 제어 · 운영 전 점검용</span>
+        </div>
+        <div class="screen-actions">
+          <div class="status-pill" id="playStatusPill">대기 중</div>
+        </div>
+      </div>
+
+      <div class="play-layout">
+        <div class="play-main">
+
+          <!-- Loaded Set -->
+          <div class="loaded-set-card" id="loadedSetCard">
+            <div class="loaded-empty" id="loadedEmpty">
+              <span>파일을 불러오세요 — 파일 탭에서 선택 후 재생</span>
+            </div>
+            <div class="loaded-info hidden" id="loadedInfo">
+              <span class="loaded-icon">🎭</span>
+              <div class="loaded-text">
+                <div class="loaded-name" id="loadedName">—</div>
+                <div class="loaded-files" id="loadedFiles">—</div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="App.nav('files')">변경</button>
+            </div>
+          </div>
+
+          <!-- Progress -->
+          <div class="progress-section">
+            <div class="progress-bar-wrap" id="progressWrap" onclick="App.seek(event)">
+              <div class="progress-fill" id="progressFill" style="width:0%"></div>
+              <div class="progress-head" id="progressHead" style="left:0%"></div>
+              <div class="section-start-marker hidden" id="sectionStartMarker"></div>
+              <div class="section-end-marker hidden" id="sectionEndMarker"></div>
+            </div>
+            <div class="progress-labels">
+              <span id="timeCurrent">0:00</span>
+              <span class="section-range-label hidden" id="sectionRangeLabel"></span>
+              <span id="timeTotal">0:00</span>
+            </div>
+          </div>
+
+          <!-- Transport -->
+          <div class="transport">
+            <button class="transport-btn" onclick="App.seekTo(0)">⏮</button>
+            <button class="transport-btn" onclick="App.seekRel(-5)">⏪</button>
+            <button class="transport-btn play-pause-btn" id="playPauseBtn" onclick="App.togglePlay()">
+              <span id="playPauseIcon">▶</span>
+            </button>
+            <button class="transport-btn" onclick="App.seekRel(5)">⏩</button>
+            <button class="transport-btn stop-btn" onclick="App.stop()">⏹</button>
+          </div>
+
+          <!-- Control Grid -->
+          <div class="control-grid">
+
+            <!-- Speed: 모션 + 음악 동기화 -->
+            <div class="control-card">
+              <div class="ctrl-header">
+                <div>
+                  <span class="ctrl-label">재생 속도</span>
+                  <span class="ctrl-sync-badge">모션 + 음악 동기화</span>
+                </div>
+                <span class="ctrl-val" id="speedVal">1.0x</span>
+              </div>
+              <div class="speed-presets">
+                <button class="speed-preset" onclick="App.setSpeed(0.5)">0.5x</button>
+                <button class="speed-preset" onclick="App.setSpeed(0.75)">0.75x</button>
+                <button class="speed-preset active" onclick="App.setSpeed(1.0)">1.0x</button>
+                <button class="speed-preset" onclick="App.setSpeed(1.25)">1.25x</button>
+                <button class="speed-preset" onclick="App.setSpeed(1.5)">1.5x</button>
+                <button class="speed-preset" onclick="App.setSpeed(2.0)">2.0x</button>
+              </div>
+              <input class="slider" id="speedSlider" type="range"
+                     min="50" max="200" step="5" value="100"
+                     oninput="App.setSpeedSlider(this.value)" />
+              <div class="ctrl-note">로봇 PC에서 모션과 음악을 동일 배율로 제어합니다</div>
+            </div>
+
+
+
+          </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="play-sidebar">
+          <div class="play-sidebar-card">
+            <div class="ps-label">로봇 상태</div>
+            <div class="robot-state-badge" id="robotStateBadge">IDLE</div>
+          </div>
+          <div class="play-sidebar-card">
+            <div class="ps-label">재생 속도</div>
+            <div class="ps-big" id="psSpeed">1.0x</div>
+          </div>
+          <div class="play-sidebar-card">
+            <div class="ps-label">최고 온도</div>
+            <div class="ps-big temp-ok" id="psMaxTemp">—°C</div>
+          </div>
+          <div class="play-sidebar-card">
+            <div class="ps-label">오늘 구동</div>
+            <div class="ps-big" id="psTotalTime">0h 0m</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREEN: PLAYLIST ──────────────────────────────────────── -->
+    <section class="screen" id="screen-playlist">
+      <div class="screen-header">
+        <div class="screen-title-wrap">
+          <h2 class="screen-title">플레이리스트</h2>
+          <span class="screen-subtitle">자동 큐 · 인터벌 관리 · 부하 보호</span>
+        </div>
+        <div class="screen-actions" id="plSetupActions">
+          <span class="pl-total-badge">예상 총 시간 <strong id="plTotalTime">—</strong></span>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="plLoopToggle" onchange="App.setPlLoop()" />
+            <span class="toggle"></span>
+            <span>전체 루프</span>
+          </label>
+          <button class="btn btn-outline" onclick="App.openAddModal()">+ 파일 추가</button>
+          <button class="btn btn-show btn-lg" id="plStartBtn" onclick="App.startPlaylist()">▶ 운영 시작</button>
+        </div>
+      </div>
+
+      <!-- ── 운영 진행 화면 (운영 시작 시 표시) ── -->
+      <div class="pl-running-view hidden" id="plRunningView">
+
+        <!-- Controls bar -->
+        <div class="show-ctrl-bar">
+          <div class="show-live-indicator">
+            <span class="show-live-dot" id="showLiveDot"></span>
+            <span id="showStateLabel">운영 중</span>
+          </div>
+          <div class="show-ctrl-buttons">
+            <button class="btn btn-outline show-ctrl-btn" id="showPauseBtn" onclick="App.showPause()">⏸ 일시정지</button>
+            <button class="btn btn-outline show-ctrl-btn" onclick="App.showSkip()">⏭ 다음 세트</button>
+            <button class="btn btn-danger show-ctrl-btn" onclick="App.showStop()">⏹ 운영 종료</button>
+          </div>
+        </div>
+
+        <!-- Main layout -->
+        <div class="show-main-layout">
+
+          <!-- LEFT: Now playing -->
+          <div class="show-now-panel">
+            <div class="show-set-counter" id="showSetCounter">SET — / —</div>
+            <div class="show-set-name" id="showSetName">—</div>
+
+            <!-- 재생 중 상태 -->
+            <div id="showPlayingState">
+              <div class="show-progress-wrap">
+                <div class="show-progress-fill" id="showProgressFill" style="width:0%"></div>
+              </div>
+              <div class="show-progress-time">
+                <span id="showTimeCurrent">0:00</span>
+                <span id="showTimeTotal">—</span>
+              </div>
+            </div>
+
+            <!-- 인터벌/휴식 상태 -->
+            <div id="showIntervalState" class="hidden">
+              <div class="show-interval-box">
+                <span class="show-interval-icon" id="showIntervalIcon">⏸</span>
+                <div class="show-interval-body">
+                  <span class="show-interval-label" id="showIntervalLabel">인터벌 대기 중</span>
+                  <span class="show-interval-countdown" id="showIntervalCountdown">—</span>
+                  <span class="show-interval-pose" id="showIntervalPose"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 완료 상태 -->
+            <div id="showDoneState" class="hidden">
+              <div class="show-done-box">
+                <span class="show-done-icon">🎉</span>
+                <span class="show-done-label">운영이 완료되었습니다</span>
+              </div>
+            </div>
+
+            <!-- Overall progress -->
+            <div class="show-overall-section">
+              <div class="show-overall-top">
+                <div class="show-overall-dots" id="showOverallDots"></div>
+                <span class="show-loop-badge hidden" id="showLoopBadge">🔁 —번째 반복</span>
+              </div>
+              <div class="show-overall-labels">
+                <span id="showOverallLabel">—</span>
+                <span class="show-remain">
+                  <span id="showRemainLabel">남은 예상 시간</span>
+                  <strong id="showRemainTime">—</strong>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Status + upcoming -->
+          <div class="show-side-panel">
+            <div class="show-side-card">
+              <div class="show-side-label">최고 온도</div>
+              <div class="show-temp-row">
+                <span class="show-temp-val" id="showTempVal">—°C</span>
+                <span class="show-temp-status" id="showTempStatus">—</span>
+              </div>
+            </div>
+
+            <div class="show-side-card show-next-card">
+              <div class="show-side-label">NEXT</div>
+              <div class="show-next-name" id="showNextName">—</div>
+              <div class="show-next-meta" id="showNextMeta"></div>
+              <div class="show-next-interval" id="showNextInterval"></div>
+            </div>
+
+            <div class="show-side-card">
+              <div class="show-side-label">AFTER THAT</div>
+              <div class="show-next-name" id="showAfterName">—</div>
+              <div class="show-next-meta" id="showAfterMeta"></div>
+            </div>
+
+            <div class="show-side-card">
+              <div class="show-side-label">오늘 구동</div>
+              <div class="ps-big" id="showTodayRuntime">0h 0m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 운영 설정 화면 (기본) ── -->
+      <div class="playlist-layout" id="plSetupView">
+
+        <!-- LEFT: Queue -->
+        <div class="pl-queue-panel">
+          <div class="pl-queue-header">
+            <span>대기열 <span class="count-badge" id="plCount">0</span></span>
+            <span class="pl-drag-hint">⠿ 드래그로 순서 변경</span>
+            <button class="btn btn-outline btn-sm" onclick="App.clearPlaylist()">전체 제거</button>
+          </div>
+          <div class="pl-queue" id="plQueue"
+               ondragover="event.preventDefault()"
+               ondrop="App.plDrop(event)">
+            <div class="pl-queue-empty" id="plQueueEmpty">
+              <span style="font-size:40px">≡</span>
+              <p>파일 탭 → "+ 플레이리스트" 또는<br>위 "+ 파일 추가" 버튼으로 추가하세요</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="pl-right-panel">
+
+          <!-- 3-step Preview -->
+          <div class="pl-section-card">
+            <div class="section-label">진행 순서 미리보기</div>
+            <div class="pl-preview-cards">
+              <div class="pl-preview-card pl-preview-now">
+                <div class="ppc-label">NOW</div>
+                <div class="ppc-name" id="ppcNow">—</div>
+                <div class="ppc-time" id="ppcNowTime">—</div>
+              </div>
+              <div class="pl-preview-arrow">→</div>
+              <div class="pl-preview-card pl-preview-next">
+                <div class="ppc-label">NEXT</div>
+                <div class="ppc-name" id="ppcNext">—</div>
+                <div class="ppc-time" id="ppcNextTime">—</div>
+              </div>
+              <div class="pl-preview-arrow">→</div>
+              <div class="pl-preview-card pl-preview-after">
+                <div class="ppc-label">AFTER</div>
+                <div class="ppc-name" id="ppcAfter">—</div>
+                <div class="ppc-time" id="ppcAfterTime">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Load Management -->
+          <div class="pl-section-card">
+            <div class="section-label">부하 관리 — 과열 보호</div>
+            <div class="load-mgmt-grid">
+              <div class="lm-item">
+                <span class="lm-label">자동 쿨다운 삽입 온도</span>
+                <div class="lm-control">
+                  <input class="lm-input" id="lmWarnTemp" type="number" value="55" min="30" max="80"
+                         onchange="App.setLmWarnTemp(this.value)" />
+                  <span class="lm-unit">°C 초과 시</span>
+                </div>
+                <span class="lm-desc">다음 세트 전 자동 쿨다운 삽입</span>
+              </div>
+              <div class="lm-item">
+                <span class="lm-label">자동 쿨다운 시간</span>
+                <div class="lm-control">
+                  <input class="lm-input" id="lmCooldownSec" type="number" value="90" min="10" max="600"
+                         onchange="App.setLmCooldown(this.value)" />
+                  <span class="lm-unit">초</span>
+                </div>
+                <span class="lm-desc">홈 포즈에서 냉각 대기</span>
+              </div>
+              <div class="lm-item">
+                <span class="lm-label">세트 스킵 온도</span>
+                <div class="lm-control">
+                  <input class="lm-input" id="lmSkipTemp" type="number" value="65" min="40" max="90"
+                         onchange="App.setLmSkipTemp(this.value)" />
+                  <span class="lm-unit">°C 초과 시</span>
+                </div>
+                <span class="lm-desc">해당 세트 자동 건너뜀</span>
+              </div>
+              <div class="lm-item">
+                <span class="lm-label">오늘 최대 구동 시간</span>
+                <div class="lm-control">
+                  <input class="lm-input" id="lmMaxDaily" type="number" value="120" min="10" max="480"
+                         onchange="App.setLmMaxDaily(this.value)" />
+                  <span class="lm-unit">분</span>
+                </div>
+                <span class="lm-desc">초과 시 경고 및 자동 정지</span>
+              </div>
+            </div>
+
+            <div class="lm-status-row">
+              <div class="lm-status-item">
+                <span class="lm-status-label">현재 최고 온도</span>
+                <span class="lm-status-val temp-ok" id="lmCurrentTemp">—°C</span>
+              </div>
+              <div class="lm-status-item">
+                <span class="lm-status-label">오늘 구동</span>
+                <span class="lm-status-val" id="lmTodayRuntime">0분</span>
+              </div>
+              <div class="lm-status-item">
+                <span class="lm-status-label">자동 쿨다운</span>
+                <span class="lm-status-val" id="lmAutoCoolStatus">대기 중</span>
+              </div>
+              <div class="lm-status-item">
+                <span class="lm-status-label">다음 세트</span>
+                <span class="lm-status-val" id="lmNextSetStatus">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="pl-section-card pl-timeline-card">
+            <div class="section-label">예상 타임라인</div>
+            <div class="pl-timeline-wrap" id="plTimeline">
+              <div class="pl-timeline-empty">세트를 추가하면 타임라인이 표시됩니다</div>
+            </div>
+            <div class="pl-timeline-legend">
+              <span class="tl-legend-item"><span class="tl-dot tl-dot-perf"></span>재생</span>
+              <span class="tl-legend-item"><span class="tl-dot tl-dot-interval"></span>인터벌</span>
+              <span class="tl-legend-item"><span class="tl-dot tl-dot-loop-rest"></span>루프 후 휴식</span>
+              <span class="tl-legend-item"><span class="tl-dot tl-dot-cool"></span>자동 쿨다운</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SCREEN: 초기화 & 모니터 (통합) ──────────────────────── -->
+    <section class="screen" id="screen-monitor">
+      <div class="screen-header">
+        <div class="screen-title-wrap">
+          <h2 class="screen-title">초기 설정 & 모니터</h2>
+          <span class="screen-subtitle">순서대로 진행 — 01 환경 확인 → 02 CAN & 모터 상태 확인 → 03 캘리브레이션</span>
+        </div>
+        <div class="screen-actions">
+          <!-- 런치 설정 + 버튼 (전역 제어) -->
+          <div class="mon-launch-bar">
+            <select class="sysmon-select mon-launch-select" id="calLaunchSelect">
+              <option value="bimanual">양팔 하드웨어</option>
+              <option value="moveit">MoveIt (교시 모드)</option>
+              <option value="sim">양팔 시뮬레이션</option>
+              <option value="preview">단일팔 프리뷰</option>
+              <option value="rosbridge">웹 뷰어 (rosbridge)</option>
+            </select>
+            <button class="btn btn-primary sysmon-btn" id="calLaunchStartBtn" onclick="App.calLaunch()">런치 시작</button>
+            <button class="btn btn-danger  sysmon-btn" id="calLaunchStopBtn" onclick="App.calLaunchStop()" disabled>런치 중지</button>
+          </div>
+          <!-- 연결 상태 -->
+          <div class="mon-conn-badge" id="monConnBadge">
+            <span class="conn-dot" id="monDot"></span>
+            <span id="monConnLabel">미연결</span>
+            <span class="mon-hz" id="monHz"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sysmon-layout">
+
+        <!-- ── 좌측: 초기화 단계 ── -->
+        <div class="sysmon-steps">
+
+          <!-- 01 환경 확인 -->
+          <div class="sysmon-step">
+            <div class="sysmon-step-hd">
+              <span class="sysmon-num">01</span>
+              <div class="sysmon-step-info">
+                <span class="sysmon-step-title">환경 확인</span>
+                <span class="sysmon-step-sub">ROS2 · 워크스페이스 · 빌드 확인 후 CAN 연결 진행</span>
+              </div>
+              <span class="sysmon-badge" id="step01Badge">대기</span>
+            </div>
+            <div class="sysmon-step-body">
+              <div class="sysmon-env-row">
+                <div class="sysmon-env-card" id="envRos2">
+                  <div class="sysmon-env-icon" id="envRos2Icon">?</div>
+                  <div class="sysmon-env-label">ROS2</div>
+                  <div class="sysmon-env-val" id="envRos2Val">확인 중</div>
+                </div>
+                <div class="sysmon-env-card" id="envWs">
+                  <div class="sysmon-env-icon" id="envWsIcon">?</div>
+                  <div class="sysmon-env-label">워크스페이스</div>
+                  <div class="sysmon-env-val" id="envWsVal">확인 중</div>
+                </div>
+                <div class="sysmon-env-card" id="envBuild">
+                  <div class="sysmon-env-icon" id="envBuildIcon">?</div>
+                  <div class="sysmon-env-label">빌드</div>
+                  <div class="sysmon-env-val" id="envBuildVal">확인 중</div>
+                </div>
+              </div>
+              <div class="sysmon-launch-status">
+                <span class="conn-dot" id="calLaunchDot"></span>
+                <span id="calLaunchLabel">런치 미실행</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 02 CAN & 모터 상태 확인 -->
+          <div class="sysmon-step">
+            <div class="sysmon-step-hd">
+              <span class="sysmon-num">02</span>
+              <div class="sysmon-step-info">
+                <span class="sysmon-step-title">CAN & 모터 상태 확인</span>
+                <span class="sysmon-step-sub">CAN 연결 → 상태 확인 시 우측 테이블 표출</span>
+              </div>
+              <span class="sysmon-badge" id="step02Badge">대기</span>
+            </div>
+            <div class="sysmon-step-body">
+              <div class="sysmon-btn-row">
+                <button class="btn btn-primary sysmon-btn" onclick="App.canConnect()">CAN 연결</button>
+                <button class="btn btn-outline  sysmon-btn" onclick="App.canDisconnect()">CAN 해제</button>
+              </div>
+              <div class="sysmon-result hidden" id="calCanResult"></div>
+              <button class="btn btn-outline sysmon-btn-full" onclick="App.motorStatusCheckCal()">
+                모터 상태 확인 &amp; 관절 데이터 표출
+              </button>
+              <div class="sysmon-result hidden" id="calDiagResult"></div>
+            </div>
+          </div>
+
+          <!-- 03 캘리브레이션 -->
+          <div class="sysmon-step">
+            <div class="sysmon-step-hd">
+              <span class="sysmon-num">03</span>
+              <div class="sysmon-step-info">
+                <span class="sysmon-step-title">캘리브레이션</span>
+                <span class="sysmon-step-sub">영점 복귀 → 모터 전원 → 순차 테스트</span>
+              </div>
+              <span class="sysmon-badge" id="step03Badge">대기</span>
+            </div>
+            <div class="sysmon-step-body">
+              <button class="btn btn-primary sysmon-btn-full" onclick="App.calHome()">홈 포지션 복귀 (영점)</button>
+              <div class="sysmon-result hidden" id="calHomeResult"></div>
+              <div class="sysmon-btn-row" style="margin-top:10px">
+                <button class="btn btn-success sysmon-btn" onclick="App.motorEnableCal()">모터 전원 켜기</button>
+                <button class="btn btn-danger  sysmon-btn" onclick="App.motorDisableCal()">모터 전원 끄기</button>
+              </div>
+              <div class="sysmon-result hidden" id="calMotorResult"></div>
+              <button class="btn btn-outline sysmon-btn-full" id="calMotorTestBtn" onclick="App.calMotorTest()" style="margin-top:10px">
+                순차 모터 테스트 (±0.2 rad)
+              </button>
+              <div class="sysmon-result hidden" id="calMotorTestResult"></div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ── 우측: 관절 상태 테이블 ── -->
+        <div class="sysmon-main">
+
+          <!-- 상태 바 -->
+          <div class="sysmon-stats-bar">
+            <div class="sysmon-stat-item">
+              <span class="sysmon-stat-label">최고 온도</span>
+              <span class="sysmon-stat-val temp-ok" id="monMaxTemp">—°C</span>
+            </div>
+            <div class="sysmon-stat-divider"></div>
+            <div class="sysmon-stat-item">
+              <span class="sysmon-stat-label">오늘 구동</span>
+              <span class="sysmon-stat-val" id="monTodayRun">0h 0m</span>
+            </div>
+            <div class="sysmon-stat-divider"></div>
+            <div class="sysmon-stat-item">
+              <span class="sysmon-stat-label">수신 주기</span>
+              <span class="sysmon-stat-val" id="monHzCard">—</span>
+            </div>
+            <div class="sysmon-stat-divider"></div>
+            <div class="sysmon-stat-item">
+              <span class="sysmon-stat-label">전체 상태</span>
+              <span class="sysmon-stat-val" id="monOverallStatus">—</span>
+            </div>
+          </div>
+
+          <!-- 관절 테이블 빈 상태 -->
+          <div class="sysmon-table-empty" id="monTableEmpty">
+            <span class="sysmon-empty-icon">📋</span>
+            <p>02단계에서 <strong>모터 상태 확인</strong>을 클릭하면<br>14관절 상태 데이터가 이 영역에 표출됩니다.</p>
+          </div>
+
+          <!-- 관절 테이블 (모터 상태 확인 후 표시) -->
+          <div class="sysmon-tables hidden" id="monTables">
+
+            <!-- 좌측 팔 -->
+            <div class="mon-arm-block">
+              <div class="mon-arm-header">
+                <div class="mon-arm-title-row">
+                  <span class="mon-arm-label">좌측 팔</span>
+                  <span class="mon-arm-joints">L1 · L2 · L3 · L4 · L5 · L6 · L7</span>
+                </div>
+                <div class="mon-arm-pills" id="monLPills"></div>
+              </div>
+              <div class="mon-table-wrap">
+                <table class="mon-table">
+                  <thead>
+                    <tr>
+                      <th>관절</th><th>각도 (rad)</th><th>속도 (rad/s)</th>
+                      <th>토크 (Nm)</th><th>온도</th><th>상태</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monTbodyL"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 우측 팔 -->
+            <div class="mon-arm-block">
+              <div class="mon-arm-header">
+                <div class="mon-arm-title-row">
+                  <span class="mon-arm-label">우측 팔</span>
+                  <span class="mon-arm-joints">R1 · R2 · R3 · R4 · R5 · R6 · R7</span>
+                </div>
+                <div class="mon-arm-pills" id="monRPills"></div>
+              </div>
+              <div class="mon-table-wrap">
+                <table class="mon-table">
+                  <thead>
+                    <tr>
+                      <th>관절</th><th>각도 (rad)</th><th>속도 (rad/s)</th>
+                      <th>토크 (Nm)</th><th>온도</th><th>상태</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monTbodyR"></tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="screen active" id="screen-safety">
+      <div class="screen-header">
+        <div class="screen-title-wrap">
+          <h2 class="screen-title">체크리스트</h2>
+          <span class="screen-subtitle">운영 전 항목을 모두 확인한 후 시작하세요</span>
+        </div>
+        <div class="screen-actions">
+          <div class="safety-conn-row">
+            <span class="conn-dot" id="safetyConnDot"></span>
+            <span id="safetyConnLabel">연결 중...</span>
+          </div>
+          <div class="safety-overall-badge" id="safetyOverallBadge">확인 대기</div>
+        </div>
+      </div>
+
+      <div class="safety-checklist-panel safety-checklist-full">
+        <div class="safety-panel-hd">
+          <span class="safety-panel-title">운영 전 체크리스트</span>
+          <button class="btn btn-outline btn-sm" onclick="App.safetyResetChecklist()">↺ 전체 초기화</button>
+        </div>
+        <div class="safety-checklist" id="safetyChecklist"></div>
+        <div class="safety-checklist-footer">
+          <div class="safety-prog-wrap">
+            <div class="safety-prog-bar" id="safetyProgressBar" style="width:0%"></div>
+          </div>
+          <div class="safety-prog-label" id="safetyProgressLabel">0 / 5 항목 확인</div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+<!-- ─── ADD TO PLAYLIST MODAL ────────────────────────────────────────── -->
+<div class="modal-backdrop hidden" id="addModal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <span>파일 추가</span>
+      <button class="modal-close" onclick="App.closeModal('addModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="add-modal-list" id="addModalList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="App.closeModal('addModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
