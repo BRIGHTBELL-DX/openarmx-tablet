@@ -176,8 +176,6 @@ function renderFileList() {
           <span>${f.music ? '🎵 ' + f.music : '🔇 음악 없음'}</span>
         </div>
       </div>
-      <div class="file-item-right">
-        <span class="file-ver-badge">${f.version}</span>
       </div>`;
     list.appendChild(item);
   });
@@ -208,7 +206,7 @@ function renderFileDetail() {
   if (!f) return;
 
   document.getElementById('detailName').textContent    = f.name;
-  document.getElementById('detailVersion').textContent = `최신: ${f.version}`;
+  document.getElementById('detailVersion').textContent = '';
   document.getElementById('metaDuration').textContent  = fmtTime(f.duration);
   document.getElementById('metaPoses').textContent     = `${f.poses}개`;
   document.getElementById('metaYaml').textContent      = f.yaml;
@@ -878,7 +876,7 @@ function openAddModal() {
          onclick="App.addModalSelect('${f.id}')">
       <span style="font-size:28px">🎭</span>
       <div class="add-modal-item-body">
-        <div class="add-modal-item-name">${f.name} <span style="font-size:11px;color:var(--text-faint)">${f.version}</span></div>
+        <div class="add-modal-item-name">${f.name}</div>
         <div class="add-modal-item-meta">⏱ ${fmtTime(f.duration)} · 📐 ${f.poses} poses · ${f.music || '음악 없음'}${alreadyIds.has(f.id) ? ' · <span style="color:var(--success)">이미 추가됨</span>' : ''}</div>
       </div>
       <button class="btn btn-outline btn-sm">추가</button>
