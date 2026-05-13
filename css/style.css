@@ -1109,10 +1109,14 @@ input, select { font: inherit; color: inherit; }
   padding: 5px 10px;
 }
 .mon-launch-select {
-  height: 30px; padding: 0 10px; font-size: 12.5px;
-  background: var(--surface); border: 1px solid var(--border2);
-  border-radius: 6px; color: var(--text); outline: none;
-  width: 200px;
+  width: 200px; height: 36px;
+  padding: 0 12px;
+  font-size: 13px; font-family: inherit;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  outline: none;
   color-scheme: dark;
 }
 /* 헤더 내 버튼은 sysmon-btn보다 컴팩트하게 */
