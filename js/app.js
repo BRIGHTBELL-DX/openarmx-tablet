@@ -1015,21 +1015,13 @@ function updateLoadMgmtStatus() {
 
   const m = Math.round(state.todayRuntime);
   const runtimeEl = document.getElementById('lmTodayRuntime');
-  if (runtimeEl) runtimeEl.textContent = `${m}분 / ${loadMgmt.maxDailyMinutes}분`;
+  if (runtimeEl) runtimeEl.textContent = `${m}분`;
 
   const coolEl = document.getElementById('lmAutoCoolStatus');
   if (coolEl) {
-    if (t == null)                        coolEl.textContent = '대기 중';
-    else if (t > loadMgmt.skipTempC)      coolEl.textContent = `스킵 구간 (${t.toFixed(1)}°C)`;
-    else if (t > loadMgmt.warnTempC)      coolEl.textContent = `삽입 예정 ${loadMgmt.autoCooldownSec}초`;
-    else                                  coolEl.textContent = '정상';
-  }
-
-  const nextEl = document.getElementById('lmNextSetStatus');
-  if (nextEl) {
-    if (t != null && t > loadMgmt.skipTempC)     nextEl.textContent = '⚠ 스킵';
-    else if (t != null && t > loadMgmt.warnTempC) nextEl.textContent = '⏸ 쿨다운 후 시작';
-    else                                           nextEl.textContent = '정상 실행';
+    if (t == null)                   coolEl.textContent = '대기 중';
+    else if (t > loadMgmt.warnTempC) coolEl.textContent = `삽입 예정 ${loadMgmt.autoCooldownSec}초`;
+    else                             coolEl.textContent = '정상';
   }
 }
 
@@ -1401,7 +1393,7 @@ window.App = {
   // show mode
   startPlaylist, showPause, showSkip, showStop,
   // load mgmt
-  setLmWarnTemp, setLmCooldown, setLmSkipTemp, setLmMaxDaily,
+  setLmWarnTemp, setLmCooldown,
   // monitor / 초기 설정
   calLaunch, calLaunchStop,
   canConnect, canDisconnect,

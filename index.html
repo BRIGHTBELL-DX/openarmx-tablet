@@ -433,24 +433,6 @@
                 </div>
                 <span class="lm-desc">홈 포즈에서 냉각 대기</span>
               </div>
-              <div class="lm-item">
-                <span class="lm-label">세트 스킵 온도</span>
-                <div class="lm-control">
-                  <input class="lm-input" id="lmSkipTemp" type="number" value="65" min="40" max="90"
-                         onchange="App.setLmSkipTemp(this.value)" />
-                  <span class="lm-unit">°C 초과 시</span>
-                </div>
-                <span class="lm-desc">해당 세트 자동 건너뜀</span>
-              </div>
-              <div class="lm-item">
-                <span class="lm-label">오늘 최대 구동 시간</span>
-                <div class="lm-control">
-                  <input class="lm-input" id="lmMaxDaily" type="number" value="120" min="10" max="480"
-                         onchange="App.setLmMaxDaily(this.value)" />
-                  <span class="lm-unit">분</span>
-                </div>
-                <span class="lm-desc">초과 시 경고 및 자동 정지</span>
-              </div>
             </div>
 
             <div class="lm-status-row">
@@ -465,10 +447,6 @@
               <div class="lm-status-item">
                 <span class="lm-status-label">자동 쿨다운</span>
                 <span class="lm-status-val" id="lmAutoCoolStatus">대기 중</span>
-              </div>
-              <div class="lm-status-item">
-                <span class="lm-status-label">다음 세트</span>
-                <span class="lm-status-val" id="lmNextSetStatus">—</span>
               </div>
             </div>
           </div>
